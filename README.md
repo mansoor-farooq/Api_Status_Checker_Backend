@@ -1,4 +1,4 @@
-👋 Hi, I'm M. Mansoor Farooq (aka @mansoor-farooq)
+👋 Hi, I'm M. Mansoor Farooq ([aka @mansoor-farooq](https://github.com/mansoor-farooq/))
 🧑‍💻 Full-stack Developer | React.js · Node.js · PostgreSQL
 
 🌍 Based in Karachi, Sindh, Pakistan
