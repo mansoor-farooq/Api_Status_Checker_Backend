@@ -30,17 +30,29 @@ const pool = new Pool({
     port: process.env.DB_PORT || 5432,
 });
 
+const allowedOrigins = [
+    "http://localhost:5173",       // local
+    "http://192.168.1.239:5173"    // local network
+    //   "https://yourdomain.com"      // production
+];
+
 const corsOptions = {
-    origin: process.env.CORS_ORIGIN || '*',
-    // origin: process.env.CORS_ORIGIN || 'http://192.168.1.239:5173/',
+    origin: function (origin, callback) {
+        // allow requests with no origin (like mobile apps or curl)
+        if (!origin) return callback(null, true);
 
-
-    methods: ['POST', 'GET', 'PUT', 'DELETE', 'PATCH'],
-    allowedHeaders: ['Content-Type', 'Authorization']
+        if (allowedOrigins.includes(origin)) {
+            return callback(null, true);
+        } else {
+            return callback(new Error("Not allowed by CORS"), false);
+        }
+    },
+    methods: ["GET", "POST", "PUT", "DELETE", "PATCH"],
+    allowedHeaders: ["Content-Type", "Authorization", "x-client-key"],
 };
 
-
 app.use(cors(corsOptions));
+
 
 app.use(express.json({ limit: '10mb' }));
 
@@ -206,8 +218,6 @@ ORDER BY created_at DESC;
     }
 });
 
-
-
 // ✅ Proxy route
 app.post("/proxy", async (req, res) => {
     const { url, method = "GET", payload = null, auth = null, headers = {} } = req.body;
@@ -236,11 +246,6 @@ app.post("/proxy", async (req, res) => {
 
         const response = await axios(config);
 
-        // return res.status(response.status).json({
-        //     message: response.status >= 400 ? (response.data?.message || "Upstream error") : "OK",
-        //     duration_ms: Date.now() - started,
-        //     data: response.data,
-        // });
         return res.status(200).json({
             upstream_status: response.status,
             message: response.status >= 400 ? (response.data?.message || "Upstream error") : "OK",
@@ -258,73 +263,7 @@ app.post("/proxy", async (req, res) => {
 });
 
 
-// const { services_name, description, method } = req.query;
-// const services_name = req.query.services_name;
-// const description = req.query.description;
-// const method = req.query.method;
 
-//  this is working but this use for large data or large app 
-// app.get('/search-services', async (req, res) => {
-//     console.log("Query Received:", req.query);
-
-//     try {
-//         let { services_name, method } = req.query;
-
-//         // Normalize method to uppercase if it exists
-//         if (method) method = method.toUpperCase();
-
-//         let result;
-
-//         if (services_name && !method) {
-//             console.log("Searching by services_name only...");
-//             result = await pool.query(
-//                 'SELECT * FROM servicess_menagment WHERE services_name ILIKE $1 AND is_deleted = FALSE',
-//                 [`%${services_name}%`]
-//             );
-//         } else if (!services_name && method) {
-//             console.log("Searching by method only...");
-//             result = await pool.query(
-//                 'SELECT * FROM servicess_menagment WHERE method = $1 AND is_deleted = FALSE',
-//                 [method]
-//             );
-//         } else if (services_name && method) {
-//             console.log("Searching by services_name and method...");
-//             result = await pool.query(
-//                 'SELECT * FROM servicess_menagment WHERE services_name ILIKE $1 AND method = $2 AND is_deleted = FALSE',
-//                 [`%${services_name}%`, method]
-//             );
-//         } else {
-//             console.log("No filters applied, returning all...");
-//             result = await pool.query(
-//                 'SELECT * FROM servicess_menagment WHERE is_deleted = FALSE'
-//             );
-//         }
-
-//         return res.status(200).json({
-//             success: true,
-//             count: result.rows.length,
-//             data: result.rows,
-//             message: result.rows.length > 0 ? 'Services fetched successfully' : 'No services found',
-//         });
-
-//     } catch (error) {
-//         console.error('Search error:', error); // Full error object
-//         return res.status(500).json({ success: false, message: 'Server error' });
-//     }
-// });
-
-
-
-
-
-
-//routes end --
-//server listening
-// const PORT = process.env.PORT || 7070;
-// // // **Start Server**
-// app.listen(PORT, () => {
-//     console.log(`✅ Server running on port ${PORT}`);
-// });
 
 const PORT = process.env.PORT || 7070;
 app.listen(PORT, '0.0.0.0', () => {
